@@ -1,0 +1,339 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="ja-JP">
+<head>
+<link rel="stylesheet" href="./special_study_css.css" type="text/css">
+<title>へやわけ</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script type="text/javascript" src="lib/prototype.js"></script>
+<script type="text/javascript" src="lib/jquery.js" charset="shift_jis"></script>
+<script type="text/javascript" src="lib/system.js" charset="shift_jis"></script>
+
+<script><!--
+jQuery.noConflict();
+jQuery(document).ready(function(){
+});
+//--></script>
+
+<title>Canvas</title>
+<!--[if IE]><script type="text/javascript" src="excanvas.js"></script><![endif]-->
+<script type="text/javascript"><!--
+
+
+function hit(a,b,c,d){
+	if( a < c && c < b ) return true;
+	if( c < a && a < d ) return true;
+	return false;
+}
+
+
+var W,H;1
+var num = new Array(30*30);
+var suuji = new Array(30*30);
+
+var color = new Array(30*30);
+
+var X1 = new Array(30*30);
+var X2 = new Array(30*30);
+var Y1 = new Array(30*30);
+var Y2 = new Array(30*30);
+
+var output;
+
+var K = 1;
+
+var lclick=false,rclick;
+var x1,x2,y1,y2;
+
+var prevText, prevText2;
+
+var ox = 4 , oy = 4 , size = 60;
+jQuery(document).ready(function(){
+jQuery('canvas#canvas').click(function(e){
+
+	var x = e.pageX - jQuery('canvas#canvas').position().left;
+	var y = e.pageY - jQuery('canvas#canvas').position().top;
+
+	var X = parseInt(x/size);
+	var Y = parseInt(y/size);
+	if( X < 0 || Y < 0 || X >= W || Y >= H ) return;
+	color[Y*W+X]++;
+	color[Y*W+X]%=3;
+	draw();
+});
+/*
+jQuery('canvas#canvas').mousemove(function(e){
+	x2 = e.pageX - jQuery('canvas#canvas').position().left;
+	y2 = e.pageY - jQuery('canvas#canvas').position().top;
+	
+	draw();
+	
+	if( lclick == true ){
+		draw2();
+	}
+});
+*/
+});
+
+function reflesh(flag){
+	var i,j;
+	for(i = 0 ; i < H*W ; i++){
+		X1[i] = Y1[i] = 100000;
+		X2[i] = Y2[i] = -100000;
+	}
+	if(flag){
+		for(i = 0 ; i < H ; i++){
+			for(j = 0 ; j < W ; j++){
+				var tx1 = x1 , tx2 = x2 , tmp;
+				if( tx1 > tx2 ){
+					tmp = tx1;
+					tx1 = tx2;
+					tx2 = tmp;
+				}
+				var ty1 = y1 , ty2 = y2;
+				if( ty1 > ty2 ){
+					tmp = ty1;
+					ty1 = ty2;
+					ty2 = tmp;
+				}
+				if( hit(ox+j*size+1,ox+j*size+1+size,tx1,tx2) && hit(oy+i*size+1,oy+i*size+1+size,ty1,ty2) ){
+					num[i*W+j] = K;
+				}
+			}
+		}
+	}
+	K = (K+1)%(H*W);
+}
+function draw2(){
+	var x = x2 , y = y2;
+	var xx = x1 , yy = y1 , tmp;
+	if( xx < x ){
+		tmp = xx;
+		xx = x;
+		xx = tmp;
+	}
+	if( yy < y ){
+		tmp = yy;
+		yy = y;
+		yy = tmp;
+	}
+	
+	var canvas = document.getElementById('canvas');
+	var ctx = canvas.getContext('2d');
+	ctx.lineWidth = 2;  
+	ctx.strokeStyle = 'rgb(192, 80, 77)';
+	ctx.strokeRect(x,y,xx-x,yy-y);
+}
+
+function getTextFile (fname) {
+	var text = null;
+	var ajax = new XMLHttpRequest();
+	with (ajax) {
+	/*@if(1) onreadystatechange @else@*/ onload /*@end@*/ =
+	function () { readyState == 4 && status == 200 && (text = responseText); };
+	open('GET', fname, false);
+	send(null);
+	};
+	return text;
+}
+
+function read(){
+	var text = getTextFile("./gamedata/"+$("lbox").value)
+	//$("text").value = text;
+	var tmpbefore = text.split(/\r\n|\r|\n/);
+	var tmp = [];
+	for(var i = 0 ; i < tmpbefore.length ; i++){
+		if( tmpbefore[i] != "" ){
+			tmp.push(tmpbefore[i]);
+		}
+	}
+	H = (tmp.length-1) / 2;
+	W = (tmp[0].length-1) / 4;
+	
+	for(var i = 0 ; i < W*H ; i++) color[i] = 0;
+	for(var i = 0 ; i < W*H ; i++) num[i] = -1;
+	for(var i = 0 ; i < W*H ; i++) suuji[i] = -1;
+	
+	var x,y,numCnt=0;
+	y = 0;
+	for(var i = 1 ; i < tmp.length ; i += 2){
+		x = 0;
+		for(var j = 1 ; j < tmp[i].length ; j += 4 ){
+			var cnt = -1;
+			for(var k = 0 ; k < 3 ; k++){ //書かれている数字の処理
+				
+				if( tmp[i][j+k] != ' ' ){
+					if( cnt == -1 ) cnt = 0;
+					cnt = cnt * 10 + tmp[i][j+k] - '0';
+				}
+			}
+			if( num[y*W+x] == -1 ){ //新しい領域か？
+				num[y*W+x] = numCnt++;
+			}
+			if( suuji[y*W+x] == -1 ) suuji[y*W+x] = cnt;
+			
+			if( tmp[i][j+3] == ' ' ){//横に連結
+				num[y*W+x+1] = num[y*W+x];
+			}
+			if( tmp[i+1][j] == ' ' ){ //縦に連結
+				num[(y+1)*W+x] = num[y*W+x];
+			}
+			x++;
+		}
+		y++;
+	}
+}
+function draw(){
+	var i,j;
+	var canvas = document.getElementById('canvas');
+	var ctx = canvas.getContext('2d');
+	ctx.clearRect(0,0,$("canvas").width,$("canvas").height);
+	ctx.strokeStyle = 'rgb(128,128,128)';
+	for(i = 0 ; i < H ; i++){
+		for(j = 0 ; j < W ; j++){
+			var tx1 = x1 , tx2 = x2 , tmp;
+			var ty1 = y1 , ty2 = y2;
+			if( lclick == false ){
+				tx1 = x2;
+				ty1 = y2;
+				ctx.fillStyle = 'rgb(200,255,255)';
+			}else{
+				ctx.fillStyle = 'rgb(255,255,0)';
+			}
+			if( tx1 > tx2 ){
+				tmp = tx1;
+				tx1 = tx2;
+				tx2 = tmp;
+			}
+			if( ty1 > ty2 ){
+				tmp = ty1;
+				ty1 = ty2;
+				ty2 = tmp;
+			}
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = 'rgb(128,128,128)';
+			ctx.fillStyle = 'rgb(0,0,0)';
+			if( color[i*W+j] == 1 ){
+				ctx.fillRect(ox+j*size+1, oy+i*size+1, size, size);
+			}else if( color[i*W+j] == 2 ){
+				ctx.beginPath();
+				ctx.arc(ox+j*size+1+size/2, oy+i*size+1+size/2, size/3, 0 , 2 * Math.PI, false);
+				ctx.stroke();
+			}
+			ctx.strokeRect(ox+j*size+1, oy+i*size+1, size, size);
+			
+			if( suuji[i*W+j] != -1 ){
+				ctx.font = "50px 'ＭＳ Ｐゴシック'";
+				ctx.fillStyle = 'rgb(128,128,128)';
+				ctx.fillText(suuji[i*W+j], ox+j*size+18,	 oy+i*size+1+50);
+			}
+		}
+	}
+	output = "";
+	
+	var ln = "+";
+	for(i = 0 ; i < W ; i++) ln += "---+";
+	output += ln;
+	for(i = 0 ; i < H ; i++){
+		output += "|";
+		for(j = 0 ; j < W ; j++){
+			output += "   |";
+		}
+		output += ln;
+	}
+	
+	for(i = 0 ; i < H ; i++){
+		for(j = 0 ; j < W ; j++){
+			if( suuji[i*W+j] != -1 ){
+				var w = (1+2*i) * (1+4*W)+1+4*j;
+				output = output.substr(0,w+1) + suuji[i*W+j] + output.substr(w+2);
+			}
+			var tx = j , ty = i - 1;
+			if( tx < 0 || ty < 0 || tx >= W || ty >= H || num[i*W+j] != num[ty*W+tx] ){
+				ctx.lineWidth = 5;
+				ctx.beginPath(); 
+				ctx.moveTo(ox+j*size+1, oy+i*size+1);
+				ctx.lineTo(ox+j*size+1+size, oy+i*size+1);
+				ctx.stroke();
+			}
+			tx = j , ty = i + 1;
+			if( tx < 0 || ty < 0 || tx >= W || ty >= H || num[i*W+j] != num[ty*W+tx] ){
+				ctx.lineWidth = 5;
+				ctx.beginPath(); 
+				ctx.moveTo(ox+j*size+1, oy+i*size+1+size);
+				ctx.lineTo(ox+j*size+1+size, oy+i*size+1+size);
+				ctx.stroke();
+			}else{
+				var w = (2+2*i) * (1+4*W)+1+4*j;
+				output = output.substr(0,w) + "   " + output.substr(w+3);
+			}
+			tx = j-1 , ty = i;
+			if( tx < 0 || ty < 0 || tx >= W || ty >= H || num[i*W+j] != num[ty*W+tx] ){
+				ctx.lineWidth = 5;
+				ctx.beginPath(); 
+				ctx.moveTo(ox+j*size+1, oy+i*size+1);
+				ctx.lineTo(ox+j*size+1, oy+i*size+1+size);
+				ctx.stroke();
+			}
+			tx = j+1 , ty = i;
+			if( tx < 0 || ty < 0 || tx >= W || ty >= H || num[i*W+j] != num[ty*W+tx] ){
+				ctx.lineWidth = 5;
+				ctx.beginPath(); 
+				ctx.moveTo(ox+j*size+1+size, oy+i*size+1);
+				ctx.lineTo(ox+j*size+1+size,oy+i*size+1+size);
+				ctx.stroke();
+			}else{
+				var w = (1+2*ty) * (1+4*W)+1+4*tx;
+				output = output.substr(0,w-1) + " " + output.substr(w);
+			}
+		}
+	}
+	var erf = ln+"\n";
+	for(i = 0 ; i < H ; i++){
+		erf += output.substr( (1+2*i) * (1+4*W) , (1+4*W) ) + "\n";
+		erf += output.substr( (2+2*i) * (1+4*W) , (1+4*W) ) + "\n";
+	}
+}
+function decide(){
+	read();
+	$("canvas").width = size * W + 10;
+	$("canvas").height = size * H + 10;
+	if( H*W >= 30*30 ){
+		alert("Size Error. W*H must be less than 900.");
+		return;
+	}
+	
+	var i,j;
+	for(i = 0 ; i < H*W ; i++){
+		X1[i] = Y1[i] = 100000;
+		X2[i] = Y2[i] = -100000;
+	}
+	draw();
+}
+// --></script>
+<style type="text/css"><!--
+--></style>
+</head>
+<body>
+	<p><select name="lb" id="lbox"></select> <input type="button" id="Decide" value="決定" onclick="decide()"><br>
+	<p> パズルを選択して「決定」を押すとパズルが表示されます．クリックすると色が塗れますが，回答はありません．パズルの横に書いている時間は，自動回答プログラムが解くのにかかった時間です．
+	<p><canvas id="canvas" width="0" height="0" style="-khtml-user-select: none"></canvas></p>
+	<!--<p><textarea id="text" style="-khtml-user-select: none; width: 650px; height:500px; font-family:'ＭＳ ゴシック', 'MS Gothic', 'Osaka－等幅', Osaka-mono, monospace; font-size:10" >a</textarea>-->
+	
+</body>
+
+<script type="text/javascript"><!--
+
+(function() {
+	//jQuery('#lbox').append(jQuery('<option value="1">test1</option>'));
+	xhr2("getfiles.cgi", {}, function(res, data, html) {
+		var tmp = res.split(/\r\n|\r|\n/);
+		for(var i = 0 ; i < tmp.length ; i++){
+			var name = tmp[i].replace(/\.txt/,"");
+			if( name == "" ) continue;
+			jQuery('#lbox').append(jQuery('<option value="'+tmp[i]+'">'+name+'</option>'));
+		}
+	}, "POST");
+})();
+--></script>
+
+</HTML>

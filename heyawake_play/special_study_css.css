@@ -1,0 +1,67 @@
+#specialmain{
+	position:absolute;
+	top:50%;
+	left:50%;
+	width:700px;
+	height:1000px;
+	margin-top:-500px;
+	margin-left:-350px;
+	text-align: center;
+	border: 1px solid #999;
+	background-color: #FFFFFF;
+}
+
+body {
+	font-family: monospace;
+	background-image: url(background.png);
+	background-repeat: repeat;
+}
+
+img {
+	border:0px;
+}
+
+#speciallogo{
+	margin-left:200px;
+	width:300px;
+	height:100px;
+	background-image: url(/common/title.png);
+	no-repeat;
+} 
+
+#content{
+	width:100%;
+	height:263px;
+	margin:10px;
+	padding:0px;
+}
+
+#specialcopyright{
+	margin:0px;
+	padding-right:2px;
+	font-size:small;
+	text-align:right;
+}
+
+/*no margin and padding*/
+.nomap{
+	margin:0px;
+	padding:0px;
+}
+/*li margin and padding*/
+.limap{
+	padding-bottom:3px;
+}
+
+.heading{
+	margin:0;
+	padding:0 0 2 0;
+	text-align:left;
+}
+
+.part{
+	margin:0;
+	padding:0;
+	text-align:left;
+	margin-left:1em;
+}
